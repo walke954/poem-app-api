@@ -1,0 +1,11 @@
+language: node_js
+node_js: node
+deploy:
+  provider: heroku
+  api_key:
+    secure: nGBuw1nRIkqCYqhAdE/S8kaS9Cmd2q9OSbzRCwQQBTR8pB9Wcb+I1y5SOOyC9oU4imc9tiKdWX+Yn6I57O9JToTk25x9rslef4QKTEuGw4t8P4czPAsgGckHYWLdfOGPTBANVXuQGzPfKh4olx85wa137+Yi4vH7Bg8jguu+5OEL/8N52EbEHG6CUO4VM1DTe93R2PggSse3DJpljUj82PY8kk4JHkCs6TWHpLo5cbOBc+HTBpTKiGD4IjICDgJggfjd/4xoziCZG+Zg00LDx8Ao2KvifgbH7gGda3/JHnkiqzWkOq0lhsMYtpPSi6Y8Tc8AJE2K2BrbrJHBQenf49akYg5WQsJOi5ZpsF59U0rELP9DK12siLEn9xwFR5MZShrl7w7rdDqclJFisl6xGWzhIHrw1uYbtMNExwbQUBcQQAK5q2rdRzV35lgKlCPhshvrdIqDFGNtj+pyhct7PXb7Ntf0ygM9bhfk79o68QWC6RcHzXJuKC+8n/eu2AFxnEGxhkcoHbgMD/sJud7xn2WyzxM7KE1hADk0d+bldeA0dMM0pxictg+LPil8qGkt4bw86XbzxrZVFcHJ/b8qKJIV2aRjGGPNe0Wl4Ak/554xzNpTUsmC8/lPH9jmVXC9wg3W4Qqaq43dkvKiFVe8IwF3pr01SgLoPKR9ymhhxYc=
+  app: fierce-wave-30323
+  on:
+    repo: walke954/poem-app-api
+services:
+- mongodb
