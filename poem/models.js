@@ -3,10 +3,12 @@ const bcryptjs = require('bcryptjs');
 
 const commentSchema = mongoose.Schema({
 	username: {type: String, required: true},
-	content: {type: String},
+	content: {type: String, required: true},
+	date: {type: Date, required: true},
 	replies: [{
 		username: {type: String, required: true},
-		content: {type: String, required: true}
+		content: {type: String, required: true},
+		date: {type: Date, required: true}
 	}]
 });
 
@@ -23,17 +25,20 @@ const poemSchema = mongoose.Schema({
 
 poemSchema.methods.serialize = function(){
 	return {
-		username: this.username,
-		firstName: this.firstName,
-		lastName: this.lastName,
+		id: this._id,
+		title: this.title,
 		date: this.date,
-		poem: this.poem
+		content: this.content
 	};
 }
 
-poemSchema.methods.getPoem = function(){
+poemSchema.methods.listItem = function(){
 	return {
-		poem: this.poem
+		id: this._id,
+		title: this.title,
+		date: this.date,
+		likes: this.likes,
+		comments: this.comments.length
 	};
 }
 

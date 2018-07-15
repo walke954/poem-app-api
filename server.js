@@ -14,6 +14,7 @@ const {router: authRouter, localStrategy, jwtStrategy} = require('./auth');
 const passport = require('passport');
 
 const userRouter = require('./user/router');
+const poemRouter = require('./poem/router');
 
 app.use(express.static('public'));
 
@@ -37,10 +38,9 @@ app.use(function (req, res, next) {
 	next();
 });
 
-const jwtAuth = passport.authenticate('jwt', {session: false});
-
 app.use('/user', userRouter);
 app.use('/auth', authRouter);
+app.use('/poem', poemRouter);
 
 let server;
 

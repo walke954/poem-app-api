@@ -6,28 +6,18 @@ const {poemSchema} = require('../poem/models');
 const userSchema = mongoose.Schema({
 	username: {type: String, required: true, unique: true},
 	password: {type: String, required: true},
+	firstName: {type: String, required: true},
+	lastName: {type: String, required: true},
 	date: {type: Date, required: true},
-	poems: [poemSchema]
+	poems: [{type: String}]
 });
 
 userSchema.methods.serialize = function(){
-	return {
-		username: this.username,
-		date: this.date,
-		poems: this.poems
-	};
-}
-
-userSchema.methods.getPoems = function(){
-	return {
-		poems: this.poems
-	};
-}
-
-userSchema.methods.accountBasics = function(){
 	return{
 		id: this._id,
 		username: this.username,
+		firstName: this.firstName,
+		lastName: this.lastName,
 		date: this.date
 	}
 }
