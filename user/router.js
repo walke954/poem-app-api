@@ -4,15 +4,33 @@ const bodyParser = require('body-parser');
 const jsonParser = bodyParser.json();
 
 const {User} = require('./models');
+const {Poem} = require('../poem/models');
 
 const router = express.Router();
 const jwt = require("jsonwebtoken");
 const {JWT_SECRET} = require('../config');
 const passport = require('passport');
 
+const jwtAuth = passport.authenticate('jwt', {session: false});
+
+router.get('/likes/', jwtAuth, (req, res) => {
+	const token = req.headers.authorization.split(' ')[1];
+	const tokenPayload = jwt.verify(token, JWT_SECRET);
+
+	User
+		.findOne({username: tokenPayload.user.username})
+		.then(user => {
+			res.json({likes: user.likes})
+		})
+		.catch(err => {
+			console.log(err);
+			res.status(500).json({message: 'Internal Server Error'});
+		});
+})
+
 // registering a new user
 router.post('/', jsonParser, (req, res) => {
-	const required_fields = ['username', 'password', 'firstName', 'lastName'];
+	const required_fields = ['username', 'password', 'displayName'];
 	const missing_field = required_fields.find(field => !(field in req.body));
 
 	if(missing_field){
@@ -21,7 +39,7 @@ router.post('/', jsonParser, (req, res) => {
 		return res.status(422).send(message);
 	}
 
-	const stringFields = ['username', 'password', 'firstName', 'lastName'];
+	const stringFields = ['username', 'password', 'displayName'];
 	const nonStringField = stringFields.find(field => field in req.body && typeof req.body[field] !== 'string');
 
 	if(nonStringField){
@@ -30,7 +48,7 @@ router.post('/', jsonParser, (req, res) => {
 		return res.status(422).send(message);
 	}
 
-	const trimmedFields = ['username', 'password', 'firstName', 'lastName'];
+	const trimmedFields = ['username', 'password', 'displayName'];
 	const nonTrimmedFields = trimmedFields.find(field => req.body[field].trim() !== req.body[field]);
 
 	if(nonTrimmedFields){
@@ -47,10 +65,7 @@ router.post('/', jsonParser, (req, res) => {
 			min: 10,
 			max: 72
 		},
-		firstName: {
-			min: 1,
-		},
-		lastName: {
+		displayName: {
 			min: 1,
 		}
 	}
@@ -68,7 +83,7 @@ router.post('/', jsonParser, (req, res) => {
 		return res.status(422).send(message);
 	}
 
-	let {username, password, firstName, lastName} = req.body;
+	let {username, password, displayName} = req.body;
 
 	return User.find({username})
 		.count()
@@ -77,7 +92,7 @@ router.post('/', jsonParser, (req, res) => {
 				return Promise.reject({
 					code: 422,
 					reason: 'ValidationError',
-					message: 'username is taken',
+					message: `The username '${username}' is alread taken!`,
 					location: 'username'
 				});
 			}
@@ -88,25 +103,22 @@ router.post('/', jsonParser, (req, res) => {
 			return User.create({
 				username,
 				password: hash,
-				firstName,
-				lastName,
+				displayName,
 				date: new Date()
 			});
 		})
 		.then(user => res.status(201).json(user.serialize(user)))
 		.catch(err => {
-			if(err === 'ValidationError'){
-				res.status(err.code).json(err);
+			if(err.reason === 'ValidationError'){
+				return res.status(err.code).json(err);
 			}
 			console.log(err);
-			res.status(500).json({message: 'Internal Server Error'});
+			return res.status(500).json({message: 'Internal Server Error'});
 		});
 });
 
-const jwtAuth = passport.authenticate('jwt', {session: false});
-
 // checks to see if user is already logged in
-router.get('/logged', jwtAuth, (req, res) => {
+router.get('/log', jwtAuth, (req, res) => {
 	const token = req.headers.authorization.split(' ')[1];
 	const tokenPayload = jwt.verify(token, JWT_SECRET);
 	const _username = tokenPayload.user.username;
@@ -118,16 +130,23 @@ router.get('/logged', jwtAuth, (req, res) => {
 		})
 		.catch(err => {
 			console.log(err);
-			return res.status(500).json({message: 'User not logged in yet.'});
+			return res.status(500).json({message: 'User not logged in yet'});
 		});
 });
 
 router.delete('/:id', jwtAuth, (req, res) => {
+
 	User
-		.findByIdAndRemove(req.params.id)
+		.findById(req.params.id)
+		.then(user => {
+			return Poem.deleteMany({_id: {$in: user.poems}});
+		})
 		.then(() => {
-			console.log('Profile deleted')
-			res.status(204).end()
+			return User.findByIdAndRemove(req.params.id);
+		})
+		.then(() => {
+			console.log('Profile deleted');
+			res.status(204).end();
 		})
 		.catch(err => {
 			console.log(err);

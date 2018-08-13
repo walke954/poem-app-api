@@ -38,6 +38,10 @@ router.get('/', jsonParser, checkGetById, (req, res) => {
 	Poem
 		.findOne({_id: req.query.id})
 		.then(poem => {
+			if(poem === null){
+				res.status(422).json({message: 'Not Found'});
+			}
+
 			res.json({poem});
 		})
 		.catch(err => {
@@ -49,6 +53,7 @@ router.get('/', jsonParser, checkGetById, (req, res) => {
 const checkGetForPage = [
 	query('username'),
 	query('search'),
+	query('likes'),
 	query('page')
 ];
 
@@ -66,11 +71,29 @@ router.get('/list/', jsonParser, checkGetForPage, (req, res) => {
 	}
 
 	const page_limit = 10;
-
-	if(req.query.username !== undefined){
+	if(req.query.likes === 'true' && req.query.username !== undefined){
+		User
+			.findOne({username: req.query.username})
+			.then(user => {
+				return Poem.find({_id: {$in: user.likes}})
+					.sort('-date')
+					.skip(page_limit * req.query.page)
+					.limit(page_limit);
+			})
+			.then(poems => {
+				poems = poems.map(poem => poem.listItem());
+				res.json({poems});
+			})
+			.catch(err => {
+				console.log(err);
+				res.status(500).json({message: 'Internal Server Error'});
+			});
+	}
+	else if(req.query.username !== undefined){
 		Poem
 			.find({username: req.query.username})
-			.skip(page_limit * page)
+			.sort('-date')
+			.skip(page_limit * req.query.page)
 			.limit(page_limit)
 			.then(poems => {
 				poems = poems.map(poem => poem.listItem());
@@ -87,19 +110,36 @@ router.get('/list/', jsonParser, checkGetForPage, (req, res) => {
 			console.error(message);
 			return res.status(422).send(message);
 		}
-
-		Poem
-			.find(req.query.search)
-			.skip(page_limit * page)
-			.limit(page_limit)
-			.then(poems => {
-				poems = poems.map(poem => poem.listItem());
-				res.json({poems});
-			})
-			.catch(err => {
-				console.log(err);
-				res.status(500).json({message: 'Internal Server Error'});
-			});
+		if(req.query.search !== ''){
+			Poem
+				.find({$text: {$search: req.query.search}})
+				.sort('-date')
+				.skip(page_limit * req.query.page)
+				.limit(page_limit)
+				.then(poems => {
+					poems = poems.map(poem => poem.listItem());
+					res.json({poems});
+				})
+				.catch(err => {
+					console.log(err);
+					res.status(500).json({message: 'Internal Server Error'});
+				});
+		}
+		else{
+			Poem
+				.find({})
+				.sort('-date')
+				.skip(page_limit * req.query.page)
+				.limit(page_limit)
+				.then(poems => {
+					poems = poems.map(poem => poem.listItem());
+					res.json({poems});
+				})
+				.catch(err => {
+					console.log(err);
+					res.status(500).json({message: 'Internal Server Error'});
+				});
+		}
 	}
 });
 
@@ -125,8 +165,7 @@ router.post('/', jwtAuth, jsonParser, checkBody, (req, res) => {
 		.create({
 			title: req.body.title,
 			username: payload.username,
-			firstName: payload.firstName,
-			lastName: payload.lastName,
+			displayName: payload.displayName,
 			date: date,
 			content: req.body.content,
 			likes: 0,
@@ -171,7 +210,7 @@ const checkCommentBody = [
 
 router.post('/comment/', jwtAuth, jsonParser, checkCommentBody, (req, res) => {
 	const errors = validationResult(req);
-
+	console.log(req.body);
 	if (!errors.isEmpty()) {
 		return res.status(422).json({errors: errors.mapped()});
 	}
@@ -185,6 +224,7 @@ router.post('/comment/', jwtAuth, jsonParser, checkCommentBody, (req, res) => {
 		.then(poem => {
 			const comment = {
 				username: payload.username,
+				displayName: payload.displayName,
 				content: req.body.content,
 				date: date,
 				replies: []
@@ -193,7 +233,7 @@ router.post('/comment/', jwtAuth, jsonParser, checkCommentBody, (req, res) => {
 			poem.comments.push(comment);
 			poem.save();
 
-			return comment;
+			return poem.comments[poem.comments.length - 1];
 		})
 		.then(comment => {
 			res.status(201).json(comment);
@@ -226,13 +266,15 @@ router.post('/comment/reply/', jwtAuth, jsonParser, checkReplyBody, (req, res) =
 		.then(poem => {
 			const reply = {
 				username: payload.username,
+				displayName: payload.displayName,
 				content: req.body.content,
 				date: date,
 			}
 			poem.comments.id(req.body.comment_id).replies.push(reply);
 			poem.save();
 
-			return reply;
+			let reply_length = poem.comments.id(req.body.comment_id).replies.length;
+			return poem.comments.id(req.body.comment_id).replies[reply_length - 1];
 		})
 		.then(reply => {
 			res.status(201).json(reply);
@@ -296,6 +338,53 @@ router.put('/:id', jwtAuth, jsonParser, (req, res) => {
 		});
 });
 
+router.put('/like/:id', jwtAuth, jsonParser, checkCommentBody, (req, res) => {
+	const payload = getPayloadFromJwt(req);
 
+	let isLiked = false;
+
+	User
+		.findOne({username: payload.username})
+		.then(user => {
+			// return error if poem is user's own
+			if(user.poems.findIndex(poem => req.params.id === poem) !== -1){
+				const message = `users cannot 'like' their own poems!`;
+				console.error(message);
+				return res.status(422).send(message);
+			}
+			
+			// If poem is not already liked by user, add to likes, or else remove from array.
+			const like = user.likes.findIndex(like => req.params.id === like);
+			if(like === -1){
+				user.likes.push(req.params.id);
+				user.save();
+			}
+			else{
+				user.likes.splice(like, 1);
+				user.save();
+				isLiked = true;
+			}
+
+			return Poem.findOne({_id: req.params.id});
+		})
+		.then(poem => {
+			// if the poem was previously liked, we are going to subtract a like from the poem, otherwise we will add a like
+			if(isLiked){
+				poem.likes--;
+				poem.save();
+			}
+			else{
+				poem.likes++;
+				poem.save();
+			}
+
+			return poem;
+		})
+		.then(poem => res.status(204).end())
+		.catch(err => {
+			console.log(err);
+			res.status(500).json({message: 'Internal Server Error'});
+		});
+});
 
 module.exports = router;

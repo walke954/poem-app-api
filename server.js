@@ -2,6 +2,7 @@ const express = require('express');
 const app = express();
 
 const morgan = require('morgan');
+const cors = require('cors');
 
 const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
@@ -9,7 +10,7 @@ const bodyParser = require('body-parser');
 
 mongoose.Promise = global.Promise;
 
-const {JWT_SECRET, PORT, DATABASE_URL} = require('./config');
+const {JWT_SECRET, PORT, DATABASE_URL, CLIENT_ORIGIN} = require('./config');
 const {router: authRouter, localStrategy, jwtStrategy} = require('./auth');
 const passport = require('passport');
 
@@ -27,20 +28,15 @@ app.use(bodyParser.urlencoded({
 passport.use(localStrategy);
 passport.use(jwtStrategy);
 
-// CORS
-app.use(function (req, res, next) {
-	res.header('Access-Control-Allow-Origin', '*');
-	res.header('Access-Control-Allow-Headers', 'Content-Type,Authorization');
-	res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE');
-	if (req.method === 'OPTIONS') {
-		return res.send(204);
-	}
-	next();
-});
+app.use(
+	cors({
+		origin: CLIENT_ORIGIN
+	})
+);
 
-app.use('/user', userRouter);
-app.use('/auth', authRouter);
-app.use('/poem', poemRouter);
+app.use('/api/user', userRouter);
+app.use('/api/auth', authRouter);
+app.use('/api/poem', poemRouter);
 
 let server;
 
