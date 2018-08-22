@@ -18,7 +18,6 @@ userSchema.methods.serialize = function(){
 		username: this.username,
 		displayName: this.displayName,
 		date: this.date,
-		likes: this.likes
 	}
 }
 
