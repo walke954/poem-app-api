@@ -70,7 +70,7 @@ router.get('/list/', jsonParser, checkGetForPage, (req, res) => {
 		return res.status(422).send(message);
 	}
 
-	const page_limit = 10;
+	const page_limit = 5;
 	if(req.query.likes === 'true' && req.query.username !== undefined){
 		User
 			.findOne({username: req.query.username})

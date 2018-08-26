@@ -26,7 +26,19 @@ router.get('/likes/', jwtAuth, (req, res) => {
 			console.log(err);
 			res.status(500).json({message: 'Internal Server Error'});
 		});
-})
+});
+
+router.get('/user/', (req, res) => {
+	User
+		.findOne({username: req.query.username})
+		.then(user => {
+			res.json({user: user.accountBasics()})
+		})
+		.catch(err => {
+			console.log(err);
+			res.status(500).json({message: 'Internal Server Error'});
+		});
+});
 
 // registering a new user
 router.post('/', jsonParser, (req, res) => {
