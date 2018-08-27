@@ -33,12 +33,11 @@ describe('Auth Router', function(){
 	describe('Create a jwt token and send it back', function(){
 		it('should fail if the username field is not filled out', function(){
 			return chai.request(app)
-				.post('/auth/login')
+				.post('/api/auth/login')
 				.send({
 					username: null,
 					password: 'sldfsdfsdfjoijd',
-					firstName: 'sjdfj',
-					lastName: 'oshdofih'
+					displayName: 'sldhfoi'
 				})
 				.then(function(res){
 					expect(res).to.have.status(400);
@@ -47,12 +46,11 @@ describe('Auth Router', function(){
 
 		it('should fail if the password field is not filled out', function(){
 			return chai.request(app)
-				.post('/auth/login')
+				.post('/api/auth/login')
 				.send({
 					username: 'sdifhosijd',
 					password: null,
-					firstName: 'sjdfj',
-					lastName: 'oshdofih'
+					displayName: 'sldhfoi',
 				})
 				.then(function(res){
 					expect(res).to.have.status(400);
@@ -61,12 +59,11 @@ describe('Auth Router', function(){
 
 		it('should fail if the password is under ten characters', function(){
 			return chai.request(app)
-				.post('/auth/login')
+				.post('/api/auth/login')
 				.send({
 					username: 'sdif',
 					password: 'shdofi',
-					firstName: 'sjdfj',
-					lastName: 'oshdofih'
+					displayName: 'sldhfoi',
 				})
 				.then(function(res){
 					expect(res).to.have.status(500);
@@ -75,12 +72,11 @@ describe('Auth Router', function(){
 
 		it('should fail if the username starts with a space', function(){
 			return chai.request(app)
-				.post('/auth/login')
+				.post('/api/auth/login')
 				.send({
 					username: ' sdif',
 					password: 'shdofi',
-					firstName: 'sjdfj',
-					lastName: 'oshdofih'
+					displayName: 'sldhfoi'
 				})
 				.then(function(res){
 					expect(res).to.have.status(500);
@@ -89,12 +85,11 @@ describe('Auth Router', function(){
 
 		it('should fail if username is not a string', function(){
 			return chai.request(app)
-				.post('/auth/login')
+				.post('/api/auth/login')
 				.send({
 					username: 234,
 					password: 'shdofi',
-					firstName: 'sjdfj',
-					lastName: 'oshdofih'
+					displayName: 'sldhfoi'
 				})
 				.then(function(res){
 					expect(res).to.have.status(500);

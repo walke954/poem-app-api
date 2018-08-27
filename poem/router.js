@@ -338,7 +338,7 @@ router.put('/:id', jwtAuth, jsonParser, (req, res) => {
 		});
 });
 
-router.put('/like/:id', jwtAuth, jsonParser, checkCommentBody, (req, res) => {
+router.put('/like/:id', jwtAuth, jsonParser, (req, res) => {
 	const payload = getPayloadFromJwt(req);
 
 	let isLiked = false;
