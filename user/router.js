@@ -129,23 +129,6 @@ router.post('/', jsonParser, (req, res) => {
 		});
 });
 
-// checks to see if user is already logged in
-router.get('/log', jwtAuth, (req, res) => {
-	const token = req.headers.authorization.split(' ')[1];
-	const tokenPayload = jwt.verify(token, JWT_SECRET);
-	const _username = tokenPayload.user.username;
-
-	User
-		.findOne({username: _username})
-		.then(user => {
-			return res.send(user.accountBasics());
-		})
-		.catch(err => {
-			console.log(err);
-			return res.status(500).json({message: 'User not logged in yet'});
-		});
-});
-
 router.delete('/:id', jwtAuth, (req, res) => {
 
 	User
