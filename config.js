@@ -5,7 +5,6 @@ exports.TEST_DATABASE_URL = process.env.TEST_DATABASE_URL ||
 exports.PORT = process.env.PORT || 8080;
 
 exports.CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || 'https://poem-app-2322.herokuapp.com';
-// exports.CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || 'http://localhost:3000';
 
 exports.JWT_SECRET = process.env.JWT_SECRET || 'Your_My_Best_Friend';
 
